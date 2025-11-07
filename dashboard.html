@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>SIMAP - Dashboard de Mapeamento</title>
+    <style>
+        /* CSS SIMPLES E LIMPO */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #004d99;
+            text-align: center;
+        }
+        .alerta-pobreza {
+            background-color: #ffdddd;
+            border-left: 6px solid #f44336;
+            color: #f44336;
+            padding: 10px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #004d99;
+            color: white;
+        }
+        /* Cor de destaque para alta vulnerabilidade */
+        .vulneravel {
+            background-color: #fcebeb; 
+            font-weight: bold;
+        }
+        #link-cadastro {
+            display: block;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #004d99;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        /* ESTILO PARA O NOVO BOTÃO DE LIMPAR */
+        #btnLimpar {
+            background-color: #f44336; /* Vermelho para atenção */
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right; /* Alinha à direita */
+            margin-top: -38px; /* Move o botão para cima */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>SIMAP - Dashboard de Vulnerabilidade e Mapeamento</h2>
+        <p>ODS 1: Erradicação da Pobreza | **Setor:** [Nome do Seu Bairro]</p>
+        
+        <a id="link-cadastro" href="simap_prototipo.html">← Voltar para o Cadastro de Famílias</a>
+        
+        <button id="btnLimpar" onclick="limparDados()">Limpar Todos os Dados</button>
+
+        <div id="stats" class="alerta-pobreza">
+            Carregando estatísticas...
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Responsável</th>
+                    <th>Renda Mensal (R$)</th>
+                    <th>Saneamento</th>
+                    <th>Escolaridade</th>
+                    <th>Status de Risco</th>
+                </tr>
+            </thead>
+            <tbody id="dadosTabela">
+                </tbody>
+        </table>
+        
+        <p style="margin-top: 30px; text-align: center;">*Os dados são salvos temporariamente no seu navegador(LocalStorage) e não em um banco de dados.</p>
+    </div>
+
+    <script>
+        // JAVASCRIPT PARA LIMPAR OS DADOS
+        function limparDados() {
+            if (confirm("ATENÇÃO: Deseja realmente APAGAR TODOS os dados de famílias cadastrados?")) {
+                localStorage.removeItem('familiasSIMAP'); // Remove a chave do LocalStorage
+                carregarDados(); // Recarrega a tabela (que agora estará vazia)
+                alert("Todos os dados de famílias foram removidos com sucesso.");
+            }
+        }
+
+        // JAVASCRIPT PARA CARREGAR E EXIBIR OS DADOS
+        function carregarDados() {
+            const dadosTabela = document.getElementById('dadosTabela');
+            const stats = document.getElementById('stats');
+            
+            // 1. Lê os dados do LocalStorage
+            let familias = JSON.parse(localStorage.getItem('familiasSIMAP')) || [];
+            dadosTabela.innerHTML = ''; // Limpa a tabela
+            
+            let altoRiscoCount = 0;
+
+            if (familias.length === 0) {
+                dadosTabela.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma família cadastrada ainda.</td></tr>';
+                stats.textContent = 'Nenhuma família cadastrada.';
+                return;
+            }
+
+            // 2. Monta as linhas da tabela
+            familias.forEach(familia => {
+                const isVulneravel = familia.status === 'ALTO';
+                if (isVulneravel) {
+                    altoRiscoCount++;
+                }
+
+                const row = dadosTabela.insertRow();
+                if (isVulneravel) {
+                    row.classList.add('vulneravel');
+                }
+
+                row.insertCell().textContent = familia.id.toString().padStart(3, '0');
+                row.insertCell().textContent = familia.nome;
+                row.insertCell().textContent = 'R$ ' + familia.renda.toLocaleString('pt-BR');
+                row.insertCell().textContent = familia.saneamento;
+                row.insertCell().textContent = familia.escolaridade;
+                row.insertCell().textContent = familia.status;
+            });
+
+            // 3. Atualiza as estatísticas
+            const porcentagemRisco = ((altoRiscoCount / familias.length) * 100).toFixed(0);
+            stats.innerHTML = `
+                🔴 **ATENÇÃO:** ${porcentagemRisco}% das ${familias.length} famílias cadastradas estão em **ALTO RISCO**.
+                Ação Imediata Necessária!
+            `;
+        }
+
+        // Chama a função ao carregar a página
+        carregarDados();
+    </script>
+
+</body>
+</html>
